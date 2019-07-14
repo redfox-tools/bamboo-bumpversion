@@ -1,0 +1,6 @@
+[@ww.select labelKey='tools.redfox.bamboo.bumpversion.capability.type.system.bumpversion.execution.type' name='bumpversionExecutableKind' list=capabilityType.executableTypes listKey='key' listValue='value' toggle='true' /]
+[#list capabilityType.executableTypes.keySet() as executableTypeKey]
+    [@ui.bambooSection  dependsOn='bumpversionExecutableKind' showOn=executableTypeKey]
+        [@ww.textfield labelKey='tools.redfox.bamboo.bumpversion.capability.type.system.bumpversion.executable.value' name=executableTypeKey description=capabilityType.getExecutableDescription(executableTypeKey) cssClass='long-field' /]
+    [/@ui.bambooSection]
+[/#list]

@@ -1,0 +1,25 @@
+<atlassian-plugin key="${atlassian.plugin.key}" name="${project.name}" plugins-version="2">
+    <plugin-info>
+        <description>${project.description}</description>
+        <version>${project.version}</version>
+        <vendor name="${project.organization.name}" url="${project.organization.url}" />
+        <param name="plugin-icon">images/pluginIcon.png</param>
+        <param name="plugin-logo">images/pluginLogo.png</param>
+    </plugin-info>
+
+    <!-- add our i18n resource -->
+    <resource type="i18n" name="i18n" location="bamboo-bumpversion"/>
+
+    <taskType key="bumpversionTask" name="bumpversion" class="tools.redfox.bamboo.bumpversion.task.BumpversionTask">
+        <description>Bump version of the project</description>
+        <category name="builder" />
+        <resource type="freemarker" name="edit" location="templates/task.ftl"/>
+        <resource type="freemarker" name="view" location="templates/task.ftl"/>
+        <configuration class="tools.redfox.bamboo.bumpversion.task.configuration.BumpversionTaskConfiguration" />
+    </taskType>
+
+    <capabilityType class="tools.redfox.bamboo.bumpversion.task.capability.BumpversionCapability" key="system.bumpversion.executable" name="bumpversion" sortOrder="2000">
+        <description>The bumpversion capability type</description>
+        <resource location="templates/editCapability.ftl" name="edit" type="freemarker"/>
+    </capabilityType>
+</atlassian-plugin>
