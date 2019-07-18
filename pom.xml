@@ -9,12 +9,12 @@
     <version>1.0.0-SNAPSHOT</version>
 
     <organization>
-        <name>Example Company</name>
-        <url>http://www.example.com/</url>
+        <name>redfox tools</name>
+        <url>http://www.redfox.tools/</url>
     </organization>
 
-    <name>bmpversion task for Bamboo</name>
-    <description>This is the tools.redfox.bamboo:bamboo-bumpversion plugin for Atlassian Bamboo.</description>
+    <name>BumpVersion task for Bamboo</name>
+    <description>Use bumpversion project for version management</description>
     <packaging>atlassian-plugin</packaging>
 
     <properties>
@@ -123,6 +123,18 @@
             <groupId>com.atlassian.sal</groupId>
             <artifactId>sal-api</artifactId>
             <version>3.0.8</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.atlassian.bamboo</groupId>
+            <artifactId>bamboo-specs-api</artifactId>
+            <version>${bamboo.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>28.0-jre</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>

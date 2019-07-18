@@ -1,42 +1,29 @@
-package tools.redfox.bamboo.bumpversion.task;
+package tools.redfox.bamboo.bumpversion.type;
 
 import com.atlassian.bamboo.build.LogEntry;
-import com.atlassian.bamboo.configuration.AdministrationConfigurationAccessor;
 import com.atlassian.bamboo.process.ExternalProcessBuilder;
 import com.atlassian.bamboo.process.ProcessService;
 import com.atlassian.bamboo.task.*;
-import com.atlassian.bamboo.utils.BambooUrl;
 import com.atlassian.bamboo.v2.build.agent.capability.CapabilityContext;
-import com.atlassian.bamboo.variable.CustomVariableContext;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
-import com.atlassian.sal.api.UrlMode;
 import com.atlassian.utils.process.ExternalProcess;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class BumpversionTask implements TaskType {
+public class BumpVersionTaskType implements TaskType {
     private ProcessService processService;
     private CapabilityContext capabilityContext;
-    private AdministrationConfigurationAccessor configurationAccessor;
-    private CustomVariableContext customVariableContext;
 
-    public BumpversionTask(
+    public BumpVersionTaskType(
             @ComponentImport final ProcessService processService,
-            @ComponentImport CapabilityContext capabilityContext,
-            @ComponentImport AdministrationConfigurationAccessor configurationAccessor,
-            @ComponentImport CustomVariableContext customVariableContext
+            @ComponentImport CapabilityContext capabilityContext
     ) {
         this.processService = processService;
         this.capabilityContext = capabilityContext;
-        this.configurationAccessor = configurationAccessor;
-        this.customVariableContext = customVariableContext;
     }
 
     @Override
@@ -57,20 +44,22 @@ public class BumpversionTask implements TaskType {
         ExternalProcess process = execute(taskContext, args);
         builder.checkReturnCode(process, 0);
 
-        String finalFilter = filter;
-        String bumpedVersion = taskContext.getBuildLogger()
-                .getLastNLogEntries(30)
-                .stream()
-                .map(LogEntry::getLog)
-                .filter(s -> s.startsWith(finalFilter))
-                .findFirst().orElse("=")
-                .split("=")[1];
+        if (builder.getTaskState() == TaskState.SUCCESS) {
+            String finalFilter = filter;
+            String[] bumpedVersion = taskContext.getBuildLogger()
+                    .getLastNLogEntries(30)
+                    .stream()
+                    .map(LogEntry::getLog)
+                    .filter(s -> s.startsWith(finalFilter))
+                    .findFirst().orElse("=")
+                    .split("=");
 
-        if (bumpedVersion.isEmpty()) {
-            taskContext.getBuildLogger().addBuildLogEntry("Failed to extract bumped version");
-            builder.failed();
-        } else {
-            taskContext.getBuildContext().getVariableContext().addResultVariable("version.bumped", bumpedVersion);
+            if (bumpedVersion.length > 0) {
+                taskContext.getBuildLogger().addBuildLogEntry("Failed to extract bumped version");
+                builder.failed();
+            } else {
+                taskContext.getBuildContext().getVariableContext().addResultVariable("version.bumped", bumpedVersion[1]);
+            }
         }
 
         return builder.build();
@@ -79,25 +68,8 @@ public class BumpversionTask implements TaskType {
     protected ExternalProcess execute(TaskContext taskContext, List<String> args) {
         ExternalProcess process;
         List<String> executable = new LinkedList<>();
-        if (taskContext.getConfigurationMap().get("executionMode").equals("local")) {
-            executable.add(capabilityContext.getCapabilityValue("system.bumpversion.executable"));
-            executable.addAll(args);
-        } else {
-            String domain = "localhost";
-            try {
-                domain = (new URL(new BambooUrl(configurationAccessor).getBaseUrl(UrlMode.ABSOLUTE))).getHost();
-            } catch (MalformedURLException e) {
-            }
-            executable.addAll(Arrays.asList(
-                    capabilityContext.getCapabilityValue("system.docker.executable"), "run",
-                    "-v", taskContext.getWorkingDirectory() + ":/home/guest/host",
-                    "-v", customVariableContext.getVariableContexts().get("agentWorkingDirectory").getValue() + ":" + customVariableContext.getVariableContexts().get("agentWorkingDirectory").getValue(),
-                    "-e", "GIT_AUTHOR_NAME=Bamboo", "-e", "GIT_AUTHOR_EMAIL=<bamboo@" + domain + ">",
-                    "-e", "GIT_COMMITTER_NAME=Bamboo", "-e", "GIT_COMMITTER_EMAIL=<bamboo@" + domain + ">",
-                    capabilityContext.getCapabilityValue("system.bumpversion.executable.docker")
-            ));
-            executable.addAll(args);
-        }
+        executable.add(capabilityContext.getCapabilityValue("tools.redfox.bumpversion.executable"));
+        executable.addAll(args);
         process = processService.createExternalProcess(taskContext,
                 new ExternalProcessBuilder()
                         .command(executable)
